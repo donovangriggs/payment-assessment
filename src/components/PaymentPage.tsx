@@ -142,20 +142,29 @@ export function PaymentPage() {
         onDelete={deleteCard}
       />
 
-      <CardIframe
-        hidden={selectedCard !== null}
-        onTokenized={handleTokenized}
-        onValidationError={handleValidationError}
-        onFlowStateChange={handleFlowStateChange}
-        triggerTokenize={triggerTokenize}
-        onTokenizeHandled={handleTokenizeHandled}
-      />
-
-      {!selectedCard && (
-        <SaveCardToggle
-          checked={saveCardChecked}
-          onChange={setSaveCardChecked}
-        />
+      {selectedCard ? (
+        <button
+          type="button"
+          className="w-full py-3 mb-6 text-base text-text-secondary bg-transparent border border-border rounded-sm cursor-pointer transition-colors duration-150 ease-out hover:text-text-primary hover:border-text-muted focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+          onClick={() => selectCard(null)}
+        >
+          Use a new card instead
+        </button>
+      ) : (
+        <>
+          <CardIframe
+            hidden={false}
+            onTokenized={handleTokenized}
+            onValidationError={handleValidationError}
+            onFlowStateChange={handleFlowStateChange}
+            triggerTokenize={triggerTokenize}
+            onTokenizeHandled={handleTokenizeHandled}
+          />
+          <SaveCardToggle
+            checked={saveCardChecked}
+            onChange={setSaveCardChecked}
+          />
+        </>
       )}
 
       <PayButton

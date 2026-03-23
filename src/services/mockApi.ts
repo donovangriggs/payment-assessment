@@ -36,8 +36,8 @@ export const DEFAULT_STORED_CARDS: readonly StoredCard[] = [
  * Simulates 1-2s network latency.
  */
 export async function processPayment(
-  amount: number,
-  currency: string,
+  _amount: number,
+  _currency: string,
   token: string,
 ): Promise<PaymentResult> {
   const delay = 1000 + Math.random() * 1000

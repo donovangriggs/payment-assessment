@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { IframeEventType, FieldError, TokenizedCard, PaymentFlowState } from '../types/payment'
 import { usePostMessage } from '../hooks/usePostMessage'
 import './CardIframe.css'

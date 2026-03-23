@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             Something went wrong
           </h2>
           <p className="text-base text-text-secondary">
-            {this.state.error?.message ?? 'An unexpected error occurred.'}
+            An unexpected error occurred. Please refresh and try again.
           </p>
           <button
             className="mt-6 py-4 px-8 min-h-12 rounded-full font-sans font-bold text-md cursor-pointer bg-accent text-accent-text border-none transition-colors duration-150 ease-out hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"

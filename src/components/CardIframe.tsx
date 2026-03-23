@@ -186,6 +186,11 @@ export function CardIframe({
             ? 'absolute w-px h-px overflow-hidden [clip:rect(0,0,0,0)]'
             : ''
         }`}
+        // allow-scripts: iframe needs JS for validation and postMessage.
+        // allow-same-origin: required because both pages share localhost in dev.
+        // In production, the iframe would be on a separate origin (e.g. cards.wardenpay.com),
+        // and allow-same-origin could be removed — the browser's same-origin policy would
+        // enforce isolation, and the sandbox would add form/popup restrictions on top.
         sandbox="allow-scripts allow-same-origin"
       />
     </section>

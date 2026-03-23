@@ -73,11 +73,11 @@ export function PaymentPage() {
 
   const handlePay = useCallback(async () => {
     if (isProcessing) return
+    setIsProcessing(true)
 
     if (selectedCard) {
       await executePayment(selectedCard.token)
     } else {
-      setIsProcessing(true)
       setTriggerTokenize(true)
     }
   }, [isProcessing, selectedCard, executePayment])

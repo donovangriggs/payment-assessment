@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card Payment Form</title>
+  <style>
+    /* Base styles — overridden by INJECT_STYLES from the main page */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      background: transparent;
+      color: #ffffff;
+    }
+
+    .form-group {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .form-field {
+      width: 100%;
+      padding: 24px 16px 8px;
+      border: none;
+      border-radius: 12px;
+      background: #2a2a2a;
+      color: #ffffff;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: box-shadow 150ms ease-out;
+    }
+
+    .form-field:focus {
+      box-shadow: 0 0 0 1px #d4ff00;
+    }
+
+    .form-field.error {
+      box-shadow: 0 0 0 1px #ff4d4d;
+    }
+
+    .form-field::placeholder {
+      color: transparent;
+    }
+
+    label {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666666;
+      pointer-events: none;
+      transition: transform 150ms ease-out, font-size 150ms ease-out;
+      transform-origin: top left;
+    }
+
+    .form-field:focus + label,
+    .form-field:not(:placeholder-shown) + label {
+      transform: translateY(-8px);
+      font-size: 10px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .error-message {
+      font-size: 12px;
+      color: #ff4d4d;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+
+    /* Card number field uses mono font for tabular figures */
+    #pan {
+      font-family: 'Geist Mono', ui-monospace, monospace;
+      letter-spacing: 1px;
+    }
+
+    .scheme-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      font-weight: 700;
+      pointer-events: none;
+      transition: opacity 250ms ease-out;
+    }
+
+    .scheme-icon.visa { color: #1a73e8; }
+    .scheme-icon.mastercard { color: #ff5f00; }
+    .scheme-icon.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <form id="card-form" autocomplete="off" novalidate>
+    <div class="form-group">
+      <input
+        type="text"
+        id="name"
+        class="form-field"
+        placeholder="Cardholder name"
+        autocomplete="cc-name"
+      />
+      <label for="name">Cardholder Name</label>
+      <div class="error-message" id="name-error" role="alert"></div>
+    </div>
+
+    <div class="form-group">
+      <input
+        type="text"
+        id="pan"
+        class="form-field"
+        placeholder="Card number"
+        inputmode="numeric"
+        maxlength="23"
+        autocomplete="cc-number"
+      />
+      <label for="pan">Card Number</label>
+      <span id="scheme-icon" class="scheme-icon hidden"></span>
+      <div class="error-message" id="pan-error" role="alert"></div>
+    </div>
+
+    <div class="field-row">
+      <div class="form-group">
+        <input
+          type="text"
+          id="expiry"
+          class="form-field"
+          placeholder="MM/YY"
+          inputmode="numeric"
+          maxlength="5"
+          autocomplete="cc-exp"
+        />
+        <label for="expiry">Expiry</label>
+        <div class="error-message" id="expiry-error" role="alert"></div>
+      </div>
+      <div class="form-group">
+        <input
+          type="text"
+          id="cvv"
+          class="form-field"
+          placeholder="CVV"
+          inputmode="numeric"
+          maxlength="4"
+          autocomplete="cc-csc"
+        />
+        <label for="cvv">CVV</label>
+        <div class="error-message" id="cvv-error" role="alert"></div>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    // =========================================================================
+    // Card iframe — vanilla HTML/JS
+    // Sensitive card data NEVER leaves this iframe via postMessage.
+    // Only tokens and masked PANs cross the boundary.
+    //
+    // In production, this iframe would be served from a different origin
+    // (e.g., cards.wardenpay.com), making contentDocument inaccessible from
+    // the main page. This mock demonstrates the postMessage protocol pattern
+    // used in real PCI-compliant hosted payment pages.
+    // =========================================================================
+
+    const TRUSTED_ORIGIN = window.location.origin;
+
+    // --- Validation ---
+
+    function luhnCheck(num) {
+      const digits = num.replace(/\D/g, '');
+      if (digits.length < 13 || digits.length > 19) return false;
+
+      let sum = 0;
+      let alternate = false;
+      for (let i = digits.length - 1; i >= 0; i--) {
+        let n = parseInt(digits[i], 10);
+        if (alternate) {
+          n *= 2;
+          if (n > 9) n -= 9;
+        }
+        sum += n;
+        alternate = !alternate;
+      }
+      return sum % 10 === 0;
+    }
+
+    function detectScheme(pan) {
+      const digits = pan.replace(/\D/g, '');
+      if (!digits) return 'unknown';
+      if (digits[0] === '4') return 'visa';
+      const twoDigit = parseInt(digits.slice(0, 2), 10);
+      const fourDigit = parseInt(digits.slice(0, 4), 10);
+      if (twoDigit >= 51 && twoDigit <= 55) return 'mastercard';
+      if (fourDigit >= 2221 && fourDigit <= 2720) return 'mastercard';
+      return 'unknown';
+    }
+
+    function validateExpiry(value) {
+      const match = value.match(/^(\d{2})\/(\d{2})$/);
+      if (!match) return 'Invalid format (MM/YY)';
+
+      const month = parseInt(match[1], 10);
+      const year = parseInt(match[2], 10) + 2000;
+
+      if (month < 1 || month > 12) return 'Invalid month';
+
+      const now = new Date();
+      const expDate = new Date(year, month); // First day of month AFTER expiry
+      if (expDate <= now) return 'Card expired';
+
+      return null;
+    }
+
+    function validateForm() {
+      const errors = [];
+      const name = document.getElementById('name').value.trim();
+      const pan = document.getElementById('pan').value.replace(/\s/g, '');
+      const expiry = document.getElementById('expiry').value.trim();
+      const cvv = document.getElementById('cvv').value.trim();
+
+      // Name
+      if (!name) {
+        errors.push({ field: 'name', message: 'Cardholder name is required' });
+      } else if (name.length < 2) {
+        errors.push({ field: 'name', message: 'Name must be at least 2 characters' });
+      } else if (!/^[a-zA-Z\s\-'.]+$/.test(name)) {
+        errors.push({ field: 'name', message: 'Name contains invalid characters' });
+      }
+
+      // PAN
+      if (!pan) {
+        errors.push({ field: 'pan', message: 'Card number is required' });
+      } else if (!luhnCheck(pan)) {
+        errors.push({ field: 'pan', message: 'Invalid card number' });
+      }
+
+      // Expiry
+      if (!expiry) {
+        errors.push({ field: 'expiry', message: 'Expiry date is required' });
+      } else {
+        const expiryError = validateExpiry(expiry);
+        if (expiryError) {
+          errors.push({ field: 'expiry', message: expiryError });
+        }
+      }
+
+      // CVV
+      if (!cvv) {
+        errors.push({ field: 'cvv', message: 'CVV is required' });
+      } else if (!/^\d{3,4}$/.test(cvv)) {
+        errors.push({ field: 'cvv', message: 'CVV must be 3-4 digits' });
+      }
+
+      return errors;
+    }
+
+    // --- Formatting ---
+
+    function formatPan(value) {
+      const digits = value.replace(/\D/g, '').slice(0, 19);
+      return digits.replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function formatExpiry(value) {
+      const digits = value.replace(/\D/g, '').slice(0, 4);
+      if (digits.length > 2) {
+        return digits.slice(0, 2) + '/' + digits.slice(2);
+      }
+      return digits;
+    }
+
+    // --- UI helpers ---
+
+    function showErrors(errors) {
+      // Clear all
+      ['name', 'pan', 'expiry', 'cvv'].forEach((field) => {
+        const el = document.getElementById(field + '-error');
+        const input = document.getElementById(field);
+        if (el) el.textContent = '';
+        if (input) input.classList.remove('error');
+      });
+
+      errors.forEach(({ field, message }) => {
+        const el = document.getElementById(field + '-error');
+        const input = document.getElementById(field);
+        if (el) el.textContent = message;
+        if (input) input.classList.add('error');
+      });
+    }
+
+    function clearErrors() {
+      showErrors([]);
+    }
+
+    function updateSchemeIcon() {
+      const pan = document.getElementById('pan').value;
+      const icon = document.getElementById('scheme-icon');
+      const scheme = detectScheme(pan);
+
+      if (scheme === 'visa') {
+        icon.textContent = 'VISA';
+        icon.className = 'scheme-icon visa';
+      } else if (scheme === 'mastercard') {
+        icon.textContent = 'MC';
+        icon.className = 'scheme-icon mastercard';
+      } else {
+        icon.className = 'scheme-icon hidden';
+      }
+    }
+
+    // --- Mock tokenization ---
+
+    function generateToken(pan) {
+      const digits = pan.replace(/\D/g, '');
+      const scheme = detectScheme(pan);
+
+      // Special test card: 4000000000000002 gets a decline token
+      if (digits === '4000000000000002') {
+        return {
+          token: 'tok_decline_0002',
+          maskedPan: digits.slice(0, 4) + ' **** **** ' + digits.slice(-4),
+          scheme,
+        };
+      }
+
+      const tokenId = 'tok_' + Math.random().toString(36).slice(2, 14);
+      const maskedPan = digits.slice(0, 4) + ' **** **** ' + digits.slice(-4);
+
+      // NEVER log raw PAN — only masked
+      console.log('[iframe] Card tokenized:', maskedPan);
+
+      return { token: tokenId, maskedPan, scheme };
+    }
+
+    // --- Input formatting listeners ---
+
+    document.getElementById('pan').addEventListener('input', function (e) {
+      const cursor = e.target.selectionStart;
+      const prevLength = e.target.value.length;
+      e.target.value = formatPan(e.target.value);
+      const diff = e.target.value.length - prevLength;
+      e.target.setSelectionRange(cursor + diff, cursor + diff);
+      updateSchemeIcon();
+    });
+
+    document.getElementById('expiry').addEventListener('input', function (e) {
+      e.target.value = formatExpiry(e.target.value);
+    });
+
+    document.getElementById('cvv').addEventListener('input', function (e) {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    });
+
+    document.getElementById('name').addEventListener('input', function () {
+      clearErrors();
+    });
+
+    // --- postMessage protocol ---
+
+    function sendMessage(type, payload) {
+      window.parent.postMessage({ type, payload: payload || {} }, TRUSTED_ORIGIN);
+    }
+
+    window.addEventListener('message', function (event) {
+      if (event.origin !== TRUSTED_ORIGIN) return;
+
+      const data = event.data;
+      if (!data || typeof data.type !== 'string') return;
+
+      console.log('[iframe] Received:', data.type);
+
+      switch (data.type) {
+        case 'INJECT_STYLES': {
+          // CSS injection is a known attack surface in hosted payment pages
+          // (CSS exfiltration, expression() in legacy browsers). In production,
+          // the hosted payment page would allowlist CSS properties and use CSP
+          // headers. This mock accepts arbitrary CSS for simplicity.
+          const style = document.createElement('style');
+          style.textContent = data.payload.styles || '';
+          document.head.appendChild(style);
+          sendMessage('STYLES_APPLIED');
+          break;
+        }
+
+        case 'TOKENIZE_CARD': {
+          // Card data is read from DOM internally — NEVER passed via postMessage
+          const errors = validateForm();
+          if (errors.length > 0) {
+            showErrors(errors);
+            sendMessage('VALIDATION_ERROR', { errors });
+          } else {
+            clearErrors();
+            const pan = document.getElementById('pan').value;
+            const expiry = document.getElementById('expiry').value;
+            const result = generateToken(pan);
+
+            // Simulate brief tokenization delay
+            setTimeout(function () {
+              sendMessage('CARD_TOKENIZED', {
+                token: result.token,
+                maskedPan: result.maskedPan,
+                expiry: expiry,
+                scheme: result.scheme,
+              });
+            }, 300);
+          }
+          break;
+        }
+      }
+    });
+
+    // Signal ready
+    sendMessage('CARD_IFRAME_READY');
+    console.log('[iframe] Ready');
+  </script>
+</body>
+</html>

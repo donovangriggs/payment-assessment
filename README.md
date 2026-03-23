@@ -120,14 +120,17 @@ All `message` event listeners validate `event.origin` before processing. In dev,
 2. Click **"Pay 100.00 EUR"**
 3. **Expected:** Processing spinner, then a failure screen with a red X icon, "Payment declined", and a decline reason. A "Try again" button is shown.
 
-## Tech Stack
+## Tech Stack & Design Decisions
 
-- **Vite** — build tool + dev server
-- **React 19** + TypeScript — main page
-- **Tailwind CSS v4** — utility-first styling with design tokens via `@theme`
-- **Vanilla HTML/JS** — card iframe (PCI isolation boundary — cannot use Tailwind)
-- **Vitest** — unit tests (35 tests covering validation, API, and storage)
-- **localStorage** — mock card storage (stands in for server-side card vault)
+| Technology | Why |
+|---|---|
+| **Vite** | Fast dev server with HMR. Single `npm run dev` starts everything — the main page and iframe are served from the same origin, keeping the setup simple. |
+| **React 19 + TypeScript** | The main page uses React for component state management (stored cards, payment flow state machine, iframe lifecycle). TypeScript ensures the postMessage protocol is type-safe — every event type and payload is defined in `types/payment.ts`. |
+| **Tailwind CSS v4** | Design tokens defined once in `@theme` and used everywhere via utility classes. Keeps styling co-located with components instead of scattered across CSS files. |
+| **Vanilla HTML/JS (iframe)** | The iframe is intentionally **not** React. In a real PCI-compliant setup, the hosted payment page is a separate application on a different origin — it would never share a framework or build pipeline with the merchant page. Vanilla JS makes this separation explicit and demonstrates that card data never touches the main page's JavaScript scope. |
+| **postMessage** | The only communication channel between the main page and iframe. This mirrors real hosted payment page SDKs (Stripe Elements, Adyen Drop-in, Worldpay HPP) where the merchant page and card form are isolated by the browser's same-origin policy. |
+| **localStorage** | Stands in for a server-side card vault. In production, stored card metadata (masked PAN, expiry, scheme) would come from an API call — only tokens are client-safe. localStorage is used here to keep the demo self-contained with no backend. |
+| **Vitest** | Runs in the same Vite pipeline, zero extra config. 35 unit tests cover the validation logic (Luhn, expiry, scheme detection), mock API (success/decline), and storage layer (CRUD, corrupt data recovery). |
 
 ## Project Structure
 

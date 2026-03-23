@@ -97,32 +97,34 @@ export function CardIframe({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [iframeState, setIframeState] = useState<'loading' | 'ready' | 'styled' | 'error'>('loading')
 
+  const VALID_SCHEMES = new Set<string>(['visa', 'mastercard', 'unknown'])
+
   const handlers: Partial<Record<IframeEventType, (payload: Record<string, unknown>) => void>> = {
     CARD_IFRAME_READY: () => {
-      console.log('[main] iframe ready')
       setIframeState('ready')
       onFlowStateChange('iframe-ready')
       sendMessage('INJECT_STYLES', { styles: getInjectedStyles() })
     },
     STYLES_APPLIED: () => {
-      console.log('[main] Styles applied')
       setIframeState('styled')
       onFlowStateChange('styles-applied')
     },
     VALIDATION_ERROR: (payload) => {
-      const errors = payload.errors as FieldError[]
-      onValidationError(errors)
+      if (!Array.isArray(payload.errors)) return
+      onValidationError(payload.errors as FieldError[])
       onFlowStateChange('styles-applied')
     },
     CARD_TOKENIZED: (payload) => {
-      const card: TokenizedCard = {
-        token: payload.token as string,
-        maskedPan: payload.maskedPan as string,
-        expiry: payload.expiry as string,
-        scheme: payload.scheme as TokenizedCard['scheme'],
+      const { token, maskedPan, expiry, scheme } = payload
+      if (
+        typeof token !== 'string' || !token ||
+        typeof maskedPan !== 'string' ||
+        typeof expiry !== 'string' ||
+        typeof scheme !== 'string' || !VALID_SCHEMES.has(scheme)
+      ) {
+        return
       }
-      console.log('[main] Card tokenized:', card.maskedPan)
-      onTokenized(card)
+      onTokenized({ token, maskedPan, expiry, scheme: scheme as TokenizedCard['scheme'] })
     },
   }
 

@@ -7,6 +7,8 @@ import { DEFAULT_STORED_CARDS } from './mockApi'
 
 const STORAGE_KEY = 'payment_stored_cards'
 
+const VALID_SCHEMES = new Set(['visa', 'mastercard', 'unknown'])
+
 function isStoredCardArray(value: unknown): value is StoredCard[] {
   return (
     Array.isArray(value) &&
@@ -18,7 +20,8 @@ function isStoredCardArray(value: unknown): value is StoredCard[] {
         typeof item.token === 'string' &&
         typeof item.maskedPan === 'string' &&
         typeof item.expiry === 'string' &&
-        typeof item.scheme === 'string',
+        typeof item.scheme === 'string' &&
+        VALID_SCHEMES.has(item.scheme),
     )
   )
 }
@@ -44,11 +47,13 @@ export function loadStoredCards(): readonly StoredCard[] {
   }
 }
 
-export function saveStoredCards(cards: readonly StoredCard[]): void {
+export function saveStoredCards(cards: readonly StoredCard[]): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cards))
+    return true
   } catch {
-    // localStorage unavailable — silently fail
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+    return false
   }
 }
 

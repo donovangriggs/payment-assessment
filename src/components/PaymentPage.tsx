@@ -19,49 +19,48 @@ export function PaymentPage() {
     transactionId?: string
     error?: string
   } | null>(null)
-
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const handleFlowStateChange = useCallback((state: PaymentFlowState) => {
-    setFlowState(state)
+  const executePayment = useCallback(async (token: string) => {
+    setIsProcessing(true)
+    setFlowState('processing')
+    try {
+      const result = await processPayment(PAYMENT_AMOUNT, PAYMENT_CURRENCY, token)
+      setPaymentResult({
+        success: result.success,
+        transactionId: result.transactionId,
+        error: result.error,
+      })
+      setFlowState(result.success ? 'success' : 'failure')
+      return result
+    } catch {
+      setPaymentResult({
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      })
+      setFlowState('failure')
+      return null
+    } finally {
+      setIsProcessing(false)
+    }
   }, [])
 
   const handleTokenized = useCallback(
     async (tokenizedCard: TokenizedCard) => {
-      setIsProcessing(true)
-      setFlowState('processing')
+      const result = await executePayment(tokenizedCard.token)
 
-      try {
-        const result = await processPayment(PAYMENT_AMOUNT, PAYMENT_CURRENCY, tokenizedCard.token)
-
-        if (result.success && saveCardChecked) {
-          const newCard: StoredCard = {
-            id: `card_${Date.now()}`,
-            token: tokenizedCard.token,
-            maskedPan: tokenizedCard.maskedPan,
-            expiry: tokenizedCard.expiry,
-            scheme: tokenizedCard.scheme,
-          }
-          saveCard(newCard)
+      if (result?.success && saveCardChecked) {
+        const newCard: StoredCard = {
+          id: `card_${Date.now()}`,
+          token: tokenizedCard.token,
+          maskedPan: tokenizedCard.maskedPan,
+          expiry: tokenizedCard.expiry,
+          scheme: tokenizedCard.scheme,
         }
-
-        setPaymentResult({
-          success: result.success,
-          transactionId: result.transactionId,
-          error: result.error,
-        })
-        setFlowState(result.success ? 'success' : 'failure')
-      } catch {
-        setPaymentResult({
-          success: false,
-          error: 'An unexpected error occurred. Please try again.',
-        })
-        setFlowState('failure')
-      } finally {
-        setIsProcessing(false)
+        saveCard(newCard)
       }
     },
-    [saveCardChecked, saveCard],
+    [executePayment, saveCardChecked, saveCard],
   )
 
   const handleValidationError = useCallback((_errors: readonly FieldError[]) => {
@@ -72,38 +71,20 @@ export function PaymentPage() {
     setTriggerTokenize(false)
   }, [])
 
-  async function handlePay() {
+  const handlePay = useCallback(async () => {
     if (isProcessing) return
 
     if (selectedCard) {
-      setIsProcessing(true)
-      setFlowState('processing')
-      try {
-        const result = await processPayment(PAYMENT_AMOUNT, PAYMENT_CURRENCY, selectedCard.token)
-        setPaymentResult({
-          success: result.success,
-          transactionId: result.transactionId,
-          error: result.error,
-        })
-        setFlowState(result.success ? 'success' : 'failure')
-      } catch {
-        setPaymentResult({
-          success: false,
-          error: 'An unexpected error occurred. Please try again.',
-        })
-        setFlowState('failure')
-      } finally {
-        setIsProcessing(false)
-      }
+      await executePayment(selectedCard.token)
     } else {
       setIsProcessing(true)
       setTriggerTokenize(true)
     }
-  }
+  }, [isProcessing, selectedCard, executePayment])
 
   function handleReset() {
     setPaymentResult(null)
-    setFlowState('styles-applied')
+    setFlowState('iframe-loading')
     setIsProcessing(false)
     setSaveCardChecked(false)
     selectCard(null)
@@ -156,7 +137,7 @@ export function PaymentPage() {
             hidden={false}
             onTokenized={handleTokenized}
             onValidationError={handleValidationError}
-            onFlowStateChange={handleFlowStateChange}
+            onFlowStateChange={setFlowState}
             triggerTokenize={triggerTokenize}
             onTokenizeHandled={handleTokenizeHandled}
           />

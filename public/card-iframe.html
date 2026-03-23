@@ -178,6 +178,7 @@
     // =========================================================================
 
     const TRUSTED_ORIGIN = window.location.origin;
+    const TOKENIZE_DELAY_MS = 300;
 
     // --- Validation ---
 
@@ -417,7 +418,7 @@
                 expiry: expiry,
                 scheme: result.scheme,
               });
-            }, 300);
+            }, TOKENIZE_DELAY_MS);
           }
           break;
         }

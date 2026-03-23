@@ -61,8 +61,6 @@ The flow minimises PCI scope by isolating card data inside the iframe:
 
 If the user selects a stored card instead of entering new details, the iframe is bypassed entirely — the main page uses the stored token directly for the payment request.
 
-If the user selects a stored card instead of entering new details, the iframe is bypassed entirely — the main page uses the stored token directly for the payment request.
-
 ## postMessage Protocol
 
 | Event | Direction | Purpose |
@@ -144,7 +142,8 @@ src/
 │   ├── StoredCards   # Horizontal card tile row with select/delete
 │   ├── PayButton    # Lime pill button with processing spinner
 │   ├── SaveCardToggle # Accessible switch component
-│   └── PaymentResult  # Success/failure result screens
+│   ├── PaymentResult  # Success/failure result screens
+│   └── ErrorBoundary  # Catches render errors with recovery UI
 ├── hooks/
 │   ├── usePostMessage # iframe communication with origin validation
 │   └── useStoredCards # localStorage-backed card CRUD

@@ -1,0 +1,46 @@
+.pay-button {
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  min-height: 48px;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-md);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, opacity 150ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.pay-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.pay-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pay-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pay-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--accent-text);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

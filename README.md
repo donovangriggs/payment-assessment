@@ -1,5 +1,7 @@
 # Card Payment Page — Technical Assessment
 
+**Live demo:** https://payment-assessment.vercel.app
+
 A mocked card payment page demonstrating **PCI-compliant iframe isolation**. The main page (React + TypeScript + Tailwind) communicates with an embedded vanilla HTML iframe via `postMessage` — sensitive card data never touches the main page's DOM or JavaScript scope.
 
 ## Architecture

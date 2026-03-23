@@ -7,7 +7,6 @@ import { CardIframe } from './CardIframe'
 import { SaveCardToggle } from './SaveCardToggle'
 import { PayButton } from './PayButton'
 import { PaymentResult } from './PaymentResult'
-import './PaymentPage.css'
 
 export function PaymentPage() {
   const { cards, selectedCard, selectedCardId, selectCard, deleteCard, saveCard } = useStoredCards()
@@ -21,7 +20,6 @@ export function PaymentPage() {
     error?: string
   } | null>(null)
 
-  // Double-click prevention
   const [isProcessing, setIsProcessing] = useState(false)
 
   const handleFlowStateChange = useCallback((state: PaymentFlowState) => {
@@ -68,7 +66,6 @@ export function PaymentPage() {
 
   const handleValidationError = useCallback((_errors: readonly FieldError[]) => {
     setIsProcessing(false)
-    // Errors are displayed inside the iframe
   }, [])
 
   const handleTokenizeHandled = useCallback(() => {
@@ -79,7 +76,6 @@ export function PaymentPage() {
     if (isProcessing) return
 
     if (selectedCard) {
-      // Pay with stored card — skip iframe entirely
       setIsProcessing(true)
       setFlowState('processing')
       try {
@@ -100,7 +96,6 @@ export function PaymentPage() {
         setIsProcessing(false)
       }
     } else {
-      // Pay with new card — trigger iframe tokenization
       setIsProcessing(true)
       setTriggerTokenize(true)
     }
@@ -114,10 +109,9 @@ export function PaymentPage() {
     selectCard(null)
   }
 
-  // Show result screen when payment is complete
   if (paymentResult) {
     return (
-      <div className="payment-page">
+      <div className="w-full max-w-[440px]">
         <PaymentResult
           success={paymentResult.success}
           transactionId={paymentResult.transactionId}
@@ -135,9 +129,9 @@ export function PaymentPage() {
     (flowState === 'iframe-ready' && !selectedCard)
 
   return (
-    <div className="payment-page">
-      <h1 className="payment-title">Payment</h1>
-      <p className="payment-subtitle">
+    <div className="w-full max-w-[440px]">
+      <h1 className="font-sans font-bold text-xl text-text-primary mb-1">Payment</h1>
+      <p className="font-sans text-base text-text-secondary mb-8">
         {formatAmount(PAYMENT_AMOUNT, PAYMENT_CURRENCY)} — Fee included
       </p>
 

@@ -1,5 +1,4 @@
 import type { StoredCard } from '../types/payment'
-import './StoredCardTile.css'
 
 interface StoredCardTileProps {
   readonly card: StoredCard
@@ -35,7 +34,9 @@ export function StoredCardTile({ card, isSelected, onSelect, onDelete }: StoredC
 
   return (
     <div
-      className={`stored-card-tile ${isSelected ? 'selected' : ''}`}
+      className={`relative flex flex-col gap-2 p-6 bg-bg-surface border-2 rounded-sm min-w-[180px] cursor-pointer select-none transition-colors duration-250 ease-out hover:bg-bg-surface-alt focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${
+        isSelected ? 'border-accent' : 'border-transparent'
+      }`}
       role="radio"
       aria-checked={isSelected}
       tabIndex={0}
@@ -43,7 +44,7 @@ export function StoredCardTile({ card, isSelected, onSelect, onDelete }: StoredC
       onKeyDown={handleKeyDown}
     >
       <button
-        className="card-delete-btn"
+        className="absolute top-2 right-2 bg-transparent border-none text-text-muted text-lg cursor-pointer p-1 leading-none rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors duration-150 ease-out hover:text-error focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
         onClick={handleDelete}
         aria-label={`Delete ${SCHEME_LABELS[card.scheme] ?? 'card'} card ending in ${lastFour}`}
         type="button"
@@ -51,13 +52,13 @@ export function StoredCardTile({ card, isSelected, onSelect, onDelete }: StoredC
         &times;
       </button>
       <span
-        className="card-scheme"
-        style={{ color: SCHEME_COLORS[card.scheme] ?? 'var(--text-secondary)' }}
+        className="font-sans font-bold text-sm uppercase tracking-wide"
+        style={{ color: SCHEME_COLORS[card.scheme] ?? 'var(--color-text-secondary)' }}
       >
         {SCHEME_LABELS[card.scheme] ?? card.scheme}
       </span>
-      <span className="card-pan">{card.maskedPan}</span>
-      <span className="card-expiry">{card.expiry}</span>
+      <span className="font-mono text-sm text-text-primary">{card.maskedPan}</span>
+      <span className="font-mono text-xs text-text-secondary">{card.expiry}</span>
     </div>
   )
 }

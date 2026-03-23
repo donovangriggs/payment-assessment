@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import type { IframeEventType, FieldError, TokenizedCard, PaymentFlowState } from '../types/payment'
 import { usePostMessage } from '../hooks/usePostMessage'
-import './CardIframe.css'
 
 const IFRAME_TIMEOUT_MS = 5000
 
@@ -157,20 +156,22 @@ export function CardIframe({
   if (hidden) return null
 
   return (
-    <section className="card-iframe-section" aria-label="Card details">
-      <h2 className="section-label">Card Details</h2>
+    <section className="mb-8" aria-label="Card details">
+      <h2 className="font-sans font-medium text-xs uppercase tracking-wide text-text-secondary mb-4">
+        Card Details
+      </h2>
       {iframeState === 'loading' && (
-        <div className="iframe-skeleton">
-          <div className="skeleton-field" />
-          <div className="skeleton-field" />
-          <div className="skeleton-row">
-            <div className="skeleton-field" />
-            <div className="skeleton-field" />
+        <div className="flex flex-col gap-2">
+          <div className="h-14 bg-bg-surface rounded-sm animate-pulse" />
+          <div className="h-14 bg-bg-surface rounded-sm animate-pulse" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="h-14 bg-bg-surface rounded-sm animate-pulse" />
+            <div className="h-14 bg-bg-surface rounded-sm animate-pulse" />
           </div>
         </div>
       )}
       {iframeState === 'error' && (
-        <div className="iframe-error" role="alert">
+        <div className="p-6 bg-error/8 border-l-3 border-error rounded-sm text-error text-sm" role="alert">
           Unable to load payment form. Please refresh.
         </div>
       )}
@@ -178,7 +179,11 @@ export function CardIframe({
         ref={iframeRef}
         src="/card-iframe.html"
         title="Card payment form"
-        className={`card-iframe ${iframeState === 'loading' ? 'iframe-hidden' : ''} ${iframeState === 'error' ? 'iframe-hidden' : ''}`}
+        className={`w-full border-none bg-transparent min-h-[280px] block ${
+          iframeState === 'loading' || iframeState === 'error'
+            ? 'absolute w-px h-px overflow-hidden [clip:rect(0,0,0,0)]'
+            : ''
+        }`}
         sandbox="allow-scripts allow-same-origin"
       />
     </section>

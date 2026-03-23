@@ -1,6 +1,5 @@
 import type { StoredCard } from '../types/payment'
 import { StoredCardTile } from './StoredCardTile'
-import './StoredCards.css'
 
 interface StoredCardsProps {
   readonly cards: readonly StoredCard[]
@@ -11,17 +10,24 @@ interface StoredCardsProps {
 
 export function StoredCards({ cards, selectedCardId, onSelect, onDelete }: StoredCardsProps) {
   function handleSelect(cardId: string) {
-    // Toggle: clicking the selected card deselects it
     onSelect(selectedCardId === cardId ? null : cardId)
   }
 
   return (
-    <section className="stored-cards" aria-label="Saved cards">
-      <h2 className="section-label">Your Cards</h2>
+    <section className="mb-8" aria-label="Saved cards">
+      <h2 className="font-sans font-medium text-xs uppercase tracking-wide text-text-secondary mb-4">
+        Your Cards
+      </h2>
       {cards.length === 0 ? (
-        <p className="stored-cards-empty">No saved cards</p>
+        <p className="text-base text-text-muted p-6 text-center bg-bg-surface rounded-sm">
+          No saved cards
+        </p>
       ) : (
-        <div className="stored-cards-row" role="radiogroup" aria-label="Select a saved card">
+        <div
+          className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin"
+          role="radiogroup"
+          aria-label="Select a saved card"
+        >
           {cards.map((card) => (
             <StoredCardTile
               key={card.id}

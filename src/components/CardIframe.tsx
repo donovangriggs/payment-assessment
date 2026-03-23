@@ -53,6 +53,7 @@ function getInjectedStyles(): string {
       position: absolute;
       top: 16px;
       left: 16px;
+      z-index: 1;
       font-family: 'DM Sans', system-ui, sans-serif;
       font-size: 11px;
       font-weight: 500;
@@ -85,8 +86,8 @@ function getInjectedStyles(): string {
     .form-field:-webkit-autofill,
     .form-field:-webkit-autofill:hover,
     .form-field:-webkit-autofill:focus {
-      -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset;
-      -webkit-text-fill-color: #ffffff;
+      -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset !important;
+      -webkit-text-fill-color: #ffffff !important;
       caret-color: #ffffff;
       transition: background-color 5000s ease-in-out 0s;
     }
@@ -190,7 +191,7 @@ export function CardIframe({
         ref={iframeRef}
         src="/card-iframe.html"
         title="Card payment form"
-        className={`w-full border-none bg-transparent min-h-[300px] block overflow-hidden ${
+        className={`w-full border-none bg-transparent min-h-[300px] block ${
           iframeState === 'loading' || iframeState === 'error'
             ? 'absolute w-px h-px overflow-hidden [clip:rect(0,0,0,0)]'
             : ''

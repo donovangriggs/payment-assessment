@@ -19,6 +19,7 @@
       font-size: 14px;
       background: transparent;
       color: #ffffff;
+      overflow: hidden;
     }
 
     .form-group {
@@ -55,8 +56,8 @@
     .form-field:-webkit-autofill,
     .form-field:-webkit-autofill:hover,
     .form-field:-webkit-autofill:focus {
-      -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset;
-      -webkit-text-fill-color: #ffffff;
+      -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset !important;
+      -webkit-text-fill-color: #ffffff !important;
       caret-color: #ffffff;
       transition: background-color 5000s ease-in-out 0s;
     }
@@ -65,6 +66,7 @@
       position: absolute;
       top: 16px;
       left: 16px;
+      z-index: 1;
       font-size: 11px;
       font-weight: 500;
       text-transform: uppercase;

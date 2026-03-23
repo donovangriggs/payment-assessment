@@ -14,7 +14,10 @@ export function usePostMessage(
   handlers: Partial<Record<IframeEventType, MessageHandler>>,
 ) {
   const handlersRef = useRef(handlers)
-  handlersRef.current = handlers
+
+  useEffect(() => {
+    handlersRef.current = handlers
+  })
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {

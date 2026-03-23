@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { PaymentFlowState, TokenizedCard, FieldError, StoredCard } from '../types/payment'
+import type { PaymentFlowState, TokenizedCard, StoredCard } from '../types/payment'
 import { processPayment, formatAmount, PAYMENT_AMOUNT, PAYMENT_CURRENCY } from '../services/mockApi'
 import { useStoredCards } from '../hooks/useStoredCards'
 import { StoredCards } from './StoredCards'
@@ -63,7 +63,7 @@ export function PaymentPage() {
     [executePayment, saveCardChecked, saveCard],
   )
 
-  const handleValidationError = useCallback((_errors: readonly FieldError[]) => {
+  const handleValidationError = useCallback(() => {
     setIsProcessing(false)
   }, [])
 

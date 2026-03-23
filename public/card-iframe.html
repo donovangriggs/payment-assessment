@@ -20,6 +20,7 @@
       background: transparent;
       color: #ffffff;
       overflow: hidden;
+      padding: 2px;
     }
 
     .form-group {
@@ -52,13 +53,23 @@
       color: transparent;
     }
 
-    /* Override browser autofill blue/purple background */
+    /* Override browser autofill blue/purple background.
+       Uses animation approach which is more reliable than box-shadow trick
+       on modern Chrome versions. */
+    @keyframes autofill-override {
+      to {
+        background: #2a2a2a;
+        color: #ffffff;
+      }
+    }
+
     .form-field:-webkit-autofill,
     .form-field:-webkit-autofill:hover,
     .form-field:-webkit-autofill:focus {
       -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset !important;
       -webkit-text-fill-color: #ffffff !important;
       caret-color: #ffffff;
+      animation: autofill-override 0s forwards;
       transition: background-color 5000s ease-in-out 0s;
     }
 
@@ -126,7 +137,7 @@
         id="name"
         class="form-field"
         placeholder="Cardholder name"
-        autocomplete="cc-name"
+        autocomplete="off"
       />
       <label for="name">Cardholder Name</label>
       <div class="error-message" id="name-error" role="alert"></div>
@@ -140,7 +151,7 @@
         placeholder="Card number"
         inputmode="numeric"
         maxlength="23"
-        autocomplete="cc-number"
+        autocomplete="off"
       />
       <label for="pan">Card Number</label>
       <span id="scheme-icon" class="scheme-icon hidden"></span>
@@ -156,7 +167,7 @@
           placeholder="MM/YY"
           inputmode="numeric"
           maxlength="5"
-          autocomplete="cc-exp"
+          autocomplete="off"
         />
         <label for="expiry">Expiry</label>
         <div class="error-message" id="expiry-error" role="alert"></div>
@@ -169,7 +180,7 @@
           placeholder="CVV"
           inputmode="numeric"
           maxlength="4"
-          autocomplete="cc-csc"
+          autocomplete="off"
         />
         <label for="cvv">CVV</label>
         <div class="error-message" id="cvv-error" role="alert"></div>

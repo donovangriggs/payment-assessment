@@ -83,12 +83,17 @@ function getInjectedStyles(): string {
       margin-top: 4px;
     }
 
+    @keyframes autofill-override {
+      to { background: #2a2a2a; color: #ffffff; }
+    }
+
     .form-field:-webkit-autofill,
     .form-field:-webkit-autofill:hover,
     .form-field:-webkit-autofill:focus {
       -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset !important;
       -webkit-text-fill-color: #ffffff !important;
       caret-color: #ffffff;
+      animation: autofill-override 0s forwards;
       transition: background-color 5000s ease-in-out 0s;
     }
 

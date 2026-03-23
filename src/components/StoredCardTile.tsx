@@ -57,7 +57,7 @@ export function StoredCardTile({ card, isSelected, onSelect, onDelete }: StoredC
       >
         {SCHEME_LABELS[card.scheme] ?? card.scheme}
       </span>
-      <span className="font-mono text-sm text-text-primary">{card.maskedPan}</span>
+      <span className="font-mono text-sm text-text-primary whitespace-nowrap">{card.maskedPan}</span>
       <span className="font-mono text-xs text-text-secondary">{card.expiry}</span>
     </div>
   )

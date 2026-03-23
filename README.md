@@ -1,6 +1,6 @@
 # Card Payment Page — Technical Assessment
 
-A mocked card payment page demonstrating **PCI-compliant iframe isolation**. The main page (React + TypeScript) communicates with an embedded vanilla HTML iframe via `postMessage` — sensitive card data never touches the main page's DOM or JavaScript scope.
+A mocked card payment page demonstrating **PCI-compliant iframe isolation**. The main page (React + TypeScript + Tailwind) communicates with an embedded vanilla HTML iframe via `postMessage` — sensitive card data never touches the main page's DOM or JavaScript scope.
 
 ## Architecture
 
@@ -14,7 +14,8 @@ A mocked card payment page demonstrating **PCI-compliant iframe isolation**. The
 │                                         │
 │  ┌───────────────────────────────────┐  │
 │  │  Card iframe (vanilla HTML/JS)    │  │
-│  │  - Card number, expiry, CVV       │  │
+│  │  - Cardholder name, PAN, expiry,  │  │
+│  │    CVV fields                     │  │
 │  │  - Validation (Luhn, expiry)      │  │
 │  │  - Mock tokenization              │  │
 │  │  - postMessage communication      │  │
@@ -35,6 +36,27 @@ npm install
 npm run dev      # Opens at http://localhost:5173
 ```
 
+To run tests:
+
+```bash
+npm run build    # Type check + production build
+npx vitest run   # 35 unit tests
+```
+
+## Payment Flow
+
+The flow minimises PCI scope by isolating card data inside the iframe:
+
+1. **Main page loads stored cards** from localStorage and displays them as selectable tiles. A "Save card" toggle allows saving new cards.
+2. **User lands on the payment page** and the card iframe is loaded with styling injected from the main page via `INJECT_STYLES` postMessage event.
+3. **User fills in card details** (cardholder name, card number, expiry, CVV) inside the iframe and clicks "Pay" on the main page.
+4. **A window event (`TOKENIZE_CARD`) is sent** from the main page to the card iframe to validate card details.
+5. **If no validation errors exist**, the card iframe sends a mocked request to tokenise the card details. If validation fails, a `VALIDATION_ERROR` event is sent back with field-level errors.
+6. **The card token is returned** from the card iframe to the main page via `CARD_TOKENIZED` postMessage event (token + masked PAN — never the raw card number).
+7. **The main page does a mocked payment request** using the amount + card token and displays a success or failure result screen.
+
+If the user selects a stored card instead of entering new details, the iframe is bypassed entirely — the main page uses the stored token directly for the payment request.
+
 ## postMessage Protocol
 
 | Event | Direction | Purpose |
@@ -45,6 +67,8 @@ npm run dev      # Opens at http://localhost:5173
 | `TOKENIZE_CARD` | main → iframe | Trigger validation + tokenization |
 | `VALIDATION_ERROR` | iframe → main | Field-level validation failures |
 | `CARD_TOKENIZED` | iframe → main | Token + masked PAN (never raw card data) |
+
+All `message` event listeners validate `event.origin` before processing. In dev, both pages share `localhost:5173` — in production, the iframe would be served from a separate origin.
 
 ## Test Cases
 
@@ -69,6 +93,7 @@ npm run dev      # Opens at http://localhost:5173
 1. Click the Visa card tile
 2. Click "Pay 100.00 EUR"
 3. **Expected:** Payment processes directly (no iframe validation). Success screen.
+4. Click "Use a new card instead" to return to the card form
 
 ### 4. Card decline
 1. Enter card `4000 0000 0000 0002` with valid name, expiry, CVV
@@ -79,19 +104,33 @@ npm run dev      # Opens at http://localhost:5173
 
 - **Vite** — build tool + dev server
 - **React 19** + TypeScript — main page
-- **Vanilla HTML/JS** — card iframe (PCI isolation)
-- **CSS Variables** — design system tokens
-- **localStorage** — mock card storage
+- **Tailwind CSS v4** — utility-first styling with design tokens via `@theme`
+- **Vanilla HTML/JS** — card iframe (PCI isolation boundary — cannot use Tailwind)
+- **Vitest** — unit tests (35 tests covering validation, API, and storage)
+- **localStorage** — mock card storage (stands in for server-side card vault)
 
 ## Project Structure
 
 ```
 src/
-├── components/      # React components
-├── hooks/           # usePostMessage, useStoredCards
-├── services/        # Mock API, localStorage helpers
-├── styles/          # Global CSS + design tokens
-└── types/           # TypeScript type definitions
+├── components/      # React UI components
+│   ├── PaymentPage  # Main orchestrator — stored cards, iframe, pay flow
+│   ├── CardIframe   # iframe wrapper + postMessage handler + style injection
+│   ├── StoredCards   # Horizontal card tile row with select/delete
+│   ├── PayButton    # Lime pill button with processing spinner
+│   ├── SaveCardToggle # Accessible switch component
+│   └── PaymentResult  # Success/failure result screens
+├── hooks/
+│   ├── usePostMessage # iframe communication with origin validation
+│   └── useStoredCards # localStorage-backed card CRUD
+├── services/
+│   ├── mockApi        # processPayment + constants (tokenization is in iframe)
+│   └── storedCardsStorage # localStorage read/write with validation
+├── styles/
+│   └── index.css      # Tailwind @theme config with design tokens
+├── test/              # Vitest unit tests
+└── types/
+    └── payment.ts     # TypeScript types for the payment flow
 public/
-└── card-iframe.html # PCI-isolated card form
+└── card-iframe.html   # PCI-isolated vanilla HTML/JS card form
 ```

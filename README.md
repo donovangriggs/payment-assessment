@@ -1,73 +1,97 @@
-# React + TypeScript + Vite
+# Card Payment Page — Technical Assessment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mocked card payment page demonstrating **PCI-compliant iframe isolation**. The main page (React + TypeScript) communicates with an embedded vanilla HTML iframe via `postMessage` — sensitive card data never touches the main page's DOM or JavaScript scope.
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+┌─────────────────────────────────────────┐
+│  Main Page (React + TypeScript)         │
+│  - Stored card tiles                    │
+│  - Pay button                           │
+│  - Save card toggle                     │
+│  - Payment result screens               │
+│                                         │
+│  ┌───────────────────────────────────┐  │
+│  │  Card iframe (vanilla HTML/JS)    │  │
+│  │  - Card number, expiry, CVV       │  │
+│  │  - Validation (Luhn, expiry)      │  │
+│  │  - Mock tokenization              │  │
+│  │  - postMessage communication      │  │
+│  └───────────────────────────────────┘  │
+│           ▲              │              │
+│           │  postMessage │              │
+│           └──────────────┘              │
+└─────────────────────────────────────────┘
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The iframe is a separate HTML file (`public/card-iframe.html`) — not a React component. In production, it would be served from a different origin (e.g., `cards.wardenpay.com`), making `contentDocument` inaccessible from the main page. This mock demonstrates the protocol pattern.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Quick Start
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+nvm use          # Uses Node 24 (see .nvmrc)
+npm install
+npm run dev      # Opens at http://localhost:5173
+```
+
+## postMessage Protocol
+
+| Event | Direction | Purpose |
+|-------|-----------|---------|
+| `CARD_IFRAME_READY` | iframe → main | iframe loaded, ready for styling |
+| `INJECT_STYLES` | main → iframe | Send CSS to match merchant branding |
+| `STYLES_APPLIED` | iframe → main | Confirm styles applied |
+| `TOKENIZE_CARD` | main → iframe | Trigger validation + tokenization |
+| `VALIDATION_ERROR` | iframe → main | Field-level validation failures |
+| `CARD_TOKENIZED` | iframe → main | Token + masked PAN (never raw card data) |
+
+## Test Cases
+
+### 1. Successful new card payment
+1. Leave stored cards unselected
+2. Enter: Name "John Doe", Card `4111 1111 1111 1111`, Expiry `12/28`, CVV `123`
+3. Toggle "Save card" ON
+4. Click "Pay 100.00 EUR"
+5. **Expected:** Processing spinner → success screen with transaction ID
+6. Refresh the page
+7. **Expected:** Saved card appears in stored cards section
+
+### 2. Validation errors on invalid card
+1. Leave all fields empty, click Pay
+2. **Expected:** Validation errors for all fields
+3. Enter card `1234 5678 9012 3456` (fails Luhn)
+4. **Expected:** "Invalid card number" error
+5. Enter expired date `01/20`
+6. **Expected:** "Card expired" error
+
+### 3. Payment with stored card
+1. Click the Visa card tile
+2. Click "Pay 100.00 EUR"
+3. **Expected:** Payment processes directly (no iframe validation). Success screen.
+
+### 4. Card decline
+1. Enter card `4000 0000 0000 0002` with valid name, expiry, CVV
+2. Click Pay
+3. **Expected:** Payment declined error screen
+
+## Tech Stack
+
+- **Vite** — build tool + dev server
+- **React 19** + TypeScript — main page
+- **Vanilla HTML/JS** — card iframe (PCI isolation)
+- **CSS Variables** — design system tokens
+- **localStorage** — mock card storage
+
+## Project Structure
+
+```
+src/
+├── components/      # React components
+├── hooks/           # usePostMessage, useStoredCards
+├── services/        # Mock API, localStorage helpers
+├── styles/          # Global CSS + design tokens
+└── types/           # TypeScript type definitions
+public/
+└── card-iframe.html # PCI-isolated card form
 ```

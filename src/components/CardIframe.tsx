@@ -82,6 +82,15 @@ function getInjectedStyles(): string {
       margin-top: 4px;
     }
 
+    .form-field:-webkit-autofill,
+    .form-field:-webkit-autofill:hover,
+    .form-field:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px #2a2a2a inset;
+      -webkit-text-fill-color: #ffffff;
+      caret-color: #ffffff;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
     .scheme-icon { font-family: 'DM Sans', system-ui, sans-serif; }
   `
 }

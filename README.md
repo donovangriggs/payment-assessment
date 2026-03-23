@@ -76,33 +76,49 @@ All `message` event listeners validate `event.origin` before processing. In dev,
 
 ## Test Cases
 
-### 1. Successful new card payment
-1. Leave stored cards unselected
-2. Enter: Name "John Doe", Card `4111 1111 1111 1111`, Expiry `12/28`, CVV `123`
-3. Toggle "Save card" ON
-4. Click "Pay 100.00 EUR"
-5. **Expected:** Processing spinner → success screen with transaction ID
-6. Refresh the page
-7. **Expected:** Saved card appears in stored cards section
+### 1. Successful new card payment (covers: new card flow, save card, tokenization)
+1. Open `http://localhost:5173`
+2. Verify two stored cards (Visa, Mastercard) are displayed at the top
+3. Do **not** select a stored card — leave the card form visible
+4. In the card form, enter:
+   - Cardholder name: `John Doe`
+   - Card number: `4111 1111 1111 1111` (card number auto-formats with spaces as you type)
+   - Expiry: `12/28`
+   - CVV: `123`
+5. Toggle "Save card for future payments" **ON** (lime green)
+6. Click **"Pay 100.00 EUR"**
+7. **Expected:** Button shows "Processing..." with a spinner. After 1-2 seconds, a success screen appears with a green checkmark, "Payment successful", a transaction ID, and the amount.
+8. Click **"Make another payment"** to return to the payment form
+9. **Expected:** A third card tile now appears in the stored cards section (the card you just saved)
 
-### 2. Validation errors on invalid card
-1. Leave all fields empty, click Pay
-2. **Expected:** Validation errors for all fields
-3. Enter card `1234 5678 9012 3456` (fails Luhn)
-4. **Expected:** "Invalid card number" error
-5. Enter expired date `01/20`
-6. **Expected:** "Card expired" error
+### 2. Validation errors (covers: iframe validation, error display, Luhn check)
+1. Without entering any card details, click **"Pay 100.00 EUR"**
+2. **Expected:** Validation error messages appear below each field inside the iframe: "Cardholder name is required", "Card number is required", "Expiry date is required", "CVV is required"
+3. Enter card number `1234 5678 9012 3456` (this fails the Luhn checksum)
+4. Fill in name: `Jane Doe`, expiry: `12/28`, CVV: `123`
+5. Click **"Pay 100.00 EUR"**
+6. **Expected:** "Invalid card number" error appears below the card number field
+7. Fix the card number to `4111 1111 1111 1111`, change expiry to `01/20` (expired)
+8. Click **"Pay 100.00 EUR"**
+9. **Expected:** "Card expired" error appears below the expiry field
 
-### 3. Payment with stored card
-1. Click the Visa card tile
-2. Click "Pay 100.00 EUR"
-3. **Expected:** Payment processes directly (no iframe validation). Success screen.
-4. Click "Use a new card instead" to return to the card form
+### 3. Payment with stored card (covers: stored card selection, iframe bypass)
+1. Click the **Visa** card tile — it highlights with a lime border
+2. **Expected:** The card form (iframe) disappears and a "Use a new card instead" button appears
+3. Click **"Pay 100.00 EUR"**
+4. **Expected:** Payment processes directly without iframe validation. Success screen appears.
+5. Click **"Make another payment"**
+6. Click the **Visa** card tile again, then click **"Use a new card instead"**
+7. **Expected:** The card form (iframe) reappears with empty fields
 
-### 4. Card decline
-1. Enter card `4000 0000 0000 0002` with valid name, expiry, CVV
-2. Click Pay
-3. **Expected:** Payment declined error screen
+### 4. Card decline (covers: failed payment, decline handling)
+1. In the card form, enter:
+   - Cardholder name: `Jane Doe`
+   - Card number: `4000 0000 0000 0002` (test decline card — passes validation but payment is declined)
+   - Expiry: `12/28`
+   - CVV: `456`
+2. Click **"Pay 100.00 EUR"**
+3. **Expected:** Processing spinner, then a failure screen with a red X icon, "Payment declined", and a decline reason. A "Try again" button is shown.
 
 ## Tech Stack
 

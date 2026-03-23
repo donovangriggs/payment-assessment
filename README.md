@@ -47,13 +47,17 @@ npx vitest run   # 35 unit tests
 
 The flow minimises PCI scope by isolating card data inside the iframe:
 
-1. **Main page loads stored cards** from localStorage and displays them as selectable tiles. A "Save card" toggle allows saving new cards.
-2. **User lands on the payment page** and the card iframe is loaded with styling injected from the main page via `INJECT_STYLES` postMessage event.
-3. **User fills in card details** (cardholder name, card number, expiry, CVV) inside the iframe and clicks "Pay" on the main page.
-4. **A window event (`TOKENIZE_CARD`) is sent** from the main page to the card iframe to validate card details.
-5. **If no validation errors exist**, the card iframe sends a mocked request to tokenise the card details. If validation fails, a `VALIDATION_ERROR` event is sent back with field-level errors.
-6. **The card token is returned** from the card iframe to the main page via `CARD_TOKENIZED` postMessage event (token + masked PAN — never the raw card number).
-7. **The main page does a mocked payment request** using the amount + card token and displays a success or failure result screen.
+| Step | Requirement | Implementation |
+|------|-------------|----------------|
+| 1 | Main page loads stored cards + save card toggle | `useStoredCards` hook loads from localStorage on init. `SaveCardToggle` component rendered below the card form. Default seed: 2 mock cards (Visa + Mastercard). |
+| 2 | iframe loaded with styling injected from main page | `CardIframe` sends CSS string via `INJECT_STYLES` postMessage. The iframe receives it, injects a `<style>` tag, and confirms with `STYLES_APPLIED`. |
+| 3 | User fills in card details and clicks Pay on main page | Card fields (name, PAN, expiry, CVV) live inside the iframe. The "Pay" button lives on the main page in `PayButton`. |
+| 4 | Validation event sent from main page → iframe | Main page sends `TOKENIZE_CARD` via postMessage. The iframe receives it and runs `validateForm()` against its own DOM fields. |
+| 5 | If valid, iframe tokenises the card (mocked) | Iframe calls `generateToken()` — produces a `tok_*` token + masked PAN. No real API call. |
+| 6 | Card token returned from iframe → main page (mocked) | Iframe sends `CARD_TOKENIZED` with `{ token, maskedPan, expiry, scheme }` via postMessage. Main page receives it in `CardIframe` and passes to `PaymentPage`. |
+| 7 | Main page does payment request with amount + token (mocked) | `processPayment(amount, currency, token)` in `mockApi.ts` simulates a 1-2s delay and returns success or failure. |
+
+If the user selects a stored card instead of entering new details, the iframe is bypassed entirely — the main page uses the stored token directly for the payment request.
 
 If the user selects a stored card instead of entering new details, the iframe is bypassed entirely — the main page uses the stored token directly for the payment request.
 

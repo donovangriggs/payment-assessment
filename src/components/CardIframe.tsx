@@ -179,7 +179,7 @@ export function CardIframe({
         ref={iframeRef}
         src="/card-iframe.html"
         title="Card payment form"
-        className={`w-full border-none bg-transparent min-h-[280px] block ${
+        className={`w-full border-none bg-transparent min-h-[240px] block ${
           iframeState === 'loading' || iframeState === 'error'
             ? 'absolute w-px h-px overflow-hidden [clip:rect(0,0,0,0)]'
             : ''

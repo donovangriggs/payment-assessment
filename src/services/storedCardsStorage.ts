@@ -51,8 +51,8 @@ export function saveStoredCards(cards: readonly StoredCard[]): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cards))
     return true
-  } catch {
-    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  } catch (error) {
+    console.warn('Failed to save cards to localStorage:', error)
     return false
   }
 }
